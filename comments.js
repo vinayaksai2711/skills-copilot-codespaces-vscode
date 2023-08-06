@@ -1,64 +1,105 @@
 //create web server
-var express = require('express');
-var app = express();
-var fs = require('fs');
+//require express
+const express = require('express');
+//require body-parser
+const bodyParser = require('body-parser');
+//require cors
+const cors = require('cors');
+//require path
+const path = require('path');
+//require express-validator
+const expressValidator = require('express-validator');
+//require express-session
+const session = require('express-session');
+//require connect-mongo
+const MongoStore = require('connect-mongo')(session);
+//require mongoose
+const mongoose = require('mongoose');
+//require config
+const config = require('./config/database');
+//require passport
+const passport = require('passport');
+//require passport-local
+const LocalStrategy = require('passport-local').Strategy;
+//require bcrypt
+const bcrypt = require('bcryptjs');
+//require multer
+const multer = require('multer');
+//require nodemailer
+const nodemailer = require('nodemailer');
+//require async
+const async = require('async');
+//require crypto
+const crypto = require('crypto');
 
-//create server
-var server = app.listen(5000, function(){
-	console.log('Node server is running..');
+//connect to database
+mongoose.connect(config.database, { useNewUrlParser: true });
+
+//on connection
+mongoose.connection.on('connected', () => {
+    console.log('Connected to database ' + config.database);
 });
 
-//create socket on the server
-var io = require('socket.io').listen(server);
-
-//create connection event
-io.sockets.on('connection', function(socket){
-	console.log('socket connection is established..');
-
-	//function to read comments from file
-	function readComments(){
-		fs.readFile('comments.json', 'utf8', function(err, data){
-			if(err){
-				console.log(err);
-			}else{
-				//convert data to json object
-				var comments = JSON.parse(data);
-				//emit comments to client
-				socket.emit('comments', comments);
-			}
-		});
-	}
-
-	//function to write comments to file
-	function writeComments(comments){
-		fs.writeFile('comments.json', JSON.stringify(comments), function(err){
-			if(err){
-				console.log(err);
-			}else{
-				console.log('comments are saved to file..');
-			}
-		});
-	}
-
-	//read comments from file
-	readComments();
-
-	//listen for event
-	socket.on('newComment', function(comment){
-		//read comments from file
-		fs.readFile('comments.json', 'utf8', function(err, data){
-			if(err){
-				console.log(err);
-			}else{
-				//convert data to json object
-				var comments = JSON.parse(data);
-				//add comment to comments array
-				comments.push(comment);
-				//write comments to file
-				writeComments(comments);
-				//emit comments to client
-				io.sockets.emit('comments', comments);
-			}
-		});
-	});
+//on error
+mongoose.connection.on('error', (err) => {
+    console.log('Database error: ' + err);
 });
+
+//initialize app variable with express
+const app = express();
+
+//require users
+const User = require('./models/user');
+
+//require comments
+const Comment = require('./models/comment');
+
+//require posts
+const Post = require('./models/post');
+
+//require categories
+const Category = require('./models/category');
+
+//require tags
+const Tag = require('./models/tag');
+
+//require users
+const User = require('./models/user');
+
+//require comments
+const Comment = require('./models/comment');
+
+//require posts
+const Post = require('./models/post');
+
+//require categories
+const Category = require('./models/category');
+
+//require tags
+const Tag = require('./models/tag');
+
+//require users
+const User = require('./models/user');
+
+//require comments
+const Comment = require('./models/comment');
+
+//require posts
+const Post = require('./models/post');
+
+//require categories
+const Category = require('./models/category');
+
+//require tags
+const Tag = require('./models/tag');
+
+//require users
+const User = require('./models/user');
+
+//require comments
+const Comment = require('./models/comment');
+
+//require posts
+const Post = require('./models/post');
+
+//require
