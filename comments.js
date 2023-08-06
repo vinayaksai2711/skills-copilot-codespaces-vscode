@@ -1,62 +1,64 @@
-//creatre web server
-const express = require('express');
-const router = express.Router();
-const Comment = require('../models/Comment');
+//create web server
+var express = require('express');
+var app = express();
+var fs = require('fs');
 
-//get all comments
-router.get('/', async (req, res) => {
-    try {
-        const comments = await Comment.find();
-        res.json(comments);
-    } catch (err) {
-        res.json({ message: err });
-    }
+//create server
+var server = app.listen(5000, function(){
+	console.log('Node server is running..');
 });
 
-//get specific comment
-router.get('/:id', async (req, res) => {
-    try {
-        const comment = await Comment.findById(req.params.id);
-        res.json(comment);
-    } catch (err) {
-        res.json({ message: err });
-    }
-});
+//create socket on the server
+var io = require('socket.io').listen(server);
 
-//add comment
-router.post('/', async (req, res) => {
-    const comment = new Comment({
-        text: req.body.text,
-    });
-    try {
-        const savedComment = await comment.save();
-        res.json(savedComment);
-    } catch (err) {
-        res.json({ message: err });
-    }
-});
+//create connection event
+io.sockets.on('connection', function(socket){
+	console.log('socket connection is established..');
 
-//delete comment
-router.delete('/:id', async (req, res) => {
-    try {
-        const removedComment = await Comment.remove({ _id: req.params.id });
-        res.json(removedComment);
-    } catch (err) {
-        res.json({ message: err });
-    }
-});
+	//function to read comments from file
+	function readComments(){
+		fs.readFile('comments.json', 'utf8', function(err, data){
+			if(err){
+				console.log(err);
+			}else{
+				//convert data to json object
+				var comments = JSON.parse(data);
+				//emit comments to client
+				socket.emit('comments', comments);
+			}
+		});
+	}
 
-//update comment
-router.patch('/:id', async (req, res) => {
-    try {
-        const updatedComment = await Comment.updateOne(
-            { _id: req.params.id },
-            { $set: { text: req.body.text } }
-        );
-        res.json(updatedComment);
-    } catch (err) {
-        res.json({ message: err });
-    }
-});
+	//function to write comments to file
+	function writeComments(comments){
+		fs.writeFile('comments.json', JSON.stringify(comments), function(err){
+			if(err){
+				console.log(err);
+			}else{
+				console.log('comments are saved to file..');
+			}
+		});
+	}
 
-module.exports = router;
+	//read comments from file
+	readComments();
+
+	//listen for event
+	socket.on('newComment', function(comment){
+		//read comments from file
+		fs.readFile('comments.json', 'utf8', function(err, data){
+			if(err){
+				console.log(err);
+			}else{
+				//convert data to json object
+				var comments = JSON.parse(data);
+				//add comment to comments array
+				comments.push(comment);
+				//write comments to file
+				writeComments(comments);
+				//emit comments to client
+				io.sockets.emit('comments', comments);
+			}
+		});
+	});
+});
